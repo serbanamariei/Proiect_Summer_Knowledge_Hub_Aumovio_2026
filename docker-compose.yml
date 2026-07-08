@@ -22,8 +22,9 @@ services:
   crawler_aplicatie:
     build: .
     environment:
-      TELEGRAM_TOKEN: "TOKEN_BOT_TELEGRAM"
+      TELEGRAM_TOKEN: "TOKEN_TELEGRAM"
       DATABASE_URL: "postgres://nume_user:parola_user@baza_de_date:5432/nume_baza_de_date?sslmode=disable"
+      WEBHOOK_URL: "WEBHOOK_URL"
     ports:
       - "8080:8080"
     depends_on:
