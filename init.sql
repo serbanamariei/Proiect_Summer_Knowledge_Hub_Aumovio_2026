@@ -1,19 +1,26 @@
--- asta i tabelu pentri link uri
 CREATE TABLE IF NOT EXISTS siteuri_parsate(
     id SERIAL PRIMARY KEY,
     url TEXT NOT NULL,
     linkuri JSONB
 );
 
--- asta i tabelu pentru proxy uri
 CREATE TABLE IF NOT EXISTS proxyuri(
     id SERIAL PRIMARY KEY,
-    type TEXT NOT NULL,
-    address TEXT NOT NULL,
-    username TEXT,
-    password TEXT
+    tip TEXT NOT NULL,
+    adresa TEXT NOT NULL,
+    nume TEXT,
+    parola TEXT,
+    nr_succese INT DEFAULT 0,
+    nr_esuari INT DEFAULT 0,
+    e_banat BOOLEAN DEFAULT FALSE
 );
 
--- initializez cu un proxy socks5
-INSERT INTO proxyuri(type, address, username, password)
-VALUES ('socks5','vpn-proxy:1080','admin','parola1109');
+CREATE TABLE IF NOT EXISTS rezultate_extragere (
+    id SERIAL PRIMARY KEY,
+    link_sursa TEXT,
+    link_gasit TEXT,
+    creat_la TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO proxyuri(tip, adresa, nume, parola)
+VALUES ('socks5', 'vpn-proxy:1080', 'admin', 'parola1109');
