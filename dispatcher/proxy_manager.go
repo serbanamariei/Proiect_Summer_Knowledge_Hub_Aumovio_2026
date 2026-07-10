@@ -45,6 +45,12 @@ func NewProxyManager(db *sql.DB) (*ProxyManager, error) {
 				pm.sanatoase = append(pm.sanatoase, proxyCurent)
 			}
 		}
+
+		if err := rows.Err(); err != nil {
+			initErr = fmt.Errorf("eroare la iterarea randurilor din DB: %w", err)
+			return
+		}
+
 		instance = pm
 	})
 
