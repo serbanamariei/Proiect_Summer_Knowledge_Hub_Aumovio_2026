@@ -106,10 +106,7 @@ func handleProceseaza(w http.ResponseWriter, r *http.Request) {
 		db.Exec(`INSERT INTO rezultate_extragere (link_sursa, link_gasit) VALUES ($1, $2)`, cerere.URL, listaLinkuri[i])
 	}
 
-	mesaj := fmt.Sprintf("Scraping efectuat. Am gasit %d link-uri.", len(listaLinkuri))
-	if cerere.Proxy.Adresa != "" {
-		mesaj = fmt.Sprintf("Scraping efectuat prin %s. Am gasit %d link-uri.", cerere.Proxy.Adresa, len(listaLinkuri))
-	}
+	mesaj := fmt.Sprintf("S-au gasit %d link-uri", len(listaLinkuri))
 
 	raspuns := comun.RaspunsCrawler{
 		Mesaj:   mesaj,
