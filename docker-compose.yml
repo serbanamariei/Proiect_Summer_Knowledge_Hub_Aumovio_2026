@@ -40,6 +40,8 @@ services:
       dockerfile: dispatcher/Dockerfile
     environment:
       - DATABASE_URL=postgres://user:password@baza_de_date:5432/proict_db?sslmode=disable
+    ports:
+      - "8082:8082"
     depends_on:
       - baza_de_date
 
