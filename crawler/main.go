@@ -10,6 +10,8 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"strings"
+	"time"
 
 	"comun"
 
@@ -55,13 +57,16 @@ func (s *SocksProxy) ConstruiesteClient() (*http.Client, error) {
 
 	return &http.Client{
 		Transport: &http.Transport{Proxy: http.ProxyURL(proxyURL)},
+		Timeout:   15 * time.Second,
 	}, nil
 }
 
 type NoProxy struct{}
 
 func (n *NoProxy) ConstruiesteClient() (*http.Client, error) {
-	return &http.Client{}, nil
+	return &http.Client{
+		Timeout: 15 * time.Second,
+	}, nil
 }
 
 func CreazaProxyConcret(date comun.ProxyData) (IProxy, error) {
@@ -100,7 +105,7 @@ func handleProceseaza(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	listaLinkuri := ExtrageLinkuri(htmlBrut)
+	listaLinkuri := ExtrageLinkuri(htmlBrut, cerere.URL)
 
 	for i := 0; i < len(listaLinkuri) && i < 10; i++ {
 		db.Exec(`INSERT INTO rezultate_extragere (link_sursa, link_gasit) VALUES ($1, $2)`, cerere.URL, listaLinkuri[i])
@@ -117,7 +122,17 @@ func handleProceseaza(w http.ResponseWriter, r *http.Request) {
 }
 
 func ExtrageHTML(client *http.Client, link string) (string, error) {
-	resp, err := client.Get(link)
+	req, err := http.NewRequest("GET", link, nil)
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
+	req.Header.Set("Accept-Language", "en-US,en;q=0.5")
+	req.Header.Set("Connection", "keep-alive")
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -131,9 +146,12 @@ func ExtrageHTML(client *http.Client, link string) (string, error) {
 	return string(body), nil
 }
 
-func ExtrageLinkuri(html string) []string {
-	re := regexp.MustCompile(`href="(http[s]?://[^"]+)"`)
+func ExtrageLinkuri(html string, linkSursa string) []string {
+	re := regexp.MustCompile(`href="(http[s]?://[^"]+|/[^"]+)"`)
 	matches := re.FindAllStringSubmatch(html, -1)
+
+	parsedURL, _ := url.Parse(linkSursa)
+	domeniu := parsedURL.Scheme + "://" + parsedURL.Host
 
 	linkuriUnice := make(map[string]bool)
 	var listaFinala []string
@@ -141,6 +159,21 @@ func ExtrageLinkuri(html string) []string {
 	for _, match := range matches {
 		if len(match) > 1 {
 			link := match[1]
+
+			if strings.Contains(link, ".css") || strings.Contains(link, ".ico") ||
+				strings.Contains(link, ".png") || strings.Contains(link, ".woff") ||
+				strings.Contains(link, ".js") || strings.Contains(link, ".woff2") {
+				continue
+			}
+
+			if len(link) > 0 && link[0] == '/' {
+				if len(link) > 1 && link[1] == '/' {
+					link = "https:" + link
+				} else {
+					link = domeniu + link
+				}
+			}
+
 			if !linkuriUnice[link] {
 				linkuriUnice[link] = true
 				listaFinala = append(listaFinala, link)
